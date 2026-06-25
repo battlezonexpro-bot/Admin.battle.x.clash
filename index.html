@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=0.6">
+  <title>Matches</title>
+  
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    body { 
+      background-color: #f8fafc; 
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
+      color: #334155;
+    }
+    
+    /* Navbar */
+    .navbar-custom { 
+      background-color: #ffffff; 
+      border-bottom: 1px solid #e2e8f0;
+      padding: 12px 24px; 
+      display: flex; align-items: center; justify-content: space-between; 
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+    .navbar-brand-custom { 
+      font-weight: 700; font-size: 20px; display: flex; align-items: center; gap: 12px; 
+      color: #0f172a; text-decoration: none; letter-spacing: -0.5px;
+    }
+    
+    /* Login Screen - Render Style */
+    #login-screen {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: #f7f8fa; z-index: 1050;
+      display: none; align-items: center; justify-content: center;
+    }
+    #login-screen.active { display: flex; }
+    .login-box { 
+      width: 100%; max-width: 420px; padding: 40px; 
+      background: #ffffff; 
+      border: 1px solid #e5e7eb; 
+      border-radius: 3px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      text-align: left;
+    }
+    .login-box h3 { color: #111827; font-weight: 600; font-size: 24px; margin-bottom: 8px; font-family: inherit; text-transform: none; text-shadow: none; letter-spacing: -0.5px; }
+    .login-box p.login-sub { color: #6b7280; font-size: 14px; margin-bottom: 24px; }
+    .login-box .form-label { color: #374151; font-size: 13px; font-weight: 500; text-transform: none; letter-spacing: normal; margin-bottom: 6px; }
+    .login-box .form-control { background: #ffffff; border: 1px solid #d1d5db; color: #111827; padding: 10px 14px; border-radius: 0; font-size: 14px; box-shadow: none; }
+    .login-box .form-control:focus { border-color: #2563eb; outline: none; background: #ffffff; }
+    .login-box .btn-primary { background: #111827; color: #ffffff; border: none; font-weight: 500; font-size: 14px; padding: 10px 16px; border-radius: 0; margin-top: 15px; transition: background 0.15s; letter-spacing: normal; text-transform: none; box-shadow: none; }
+    .login-box .btn-primary:hover { background: #374151; transform: none; box-shadow: none; }
+    .page-title { font-size: 20px; margin: 20px 0; font-weight: 600; color: #111827; letter-spacing: -0.5px; }
+    
+    /* Table Controls like Video */
+    .table-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+    .dt-btn { 
+      background: #ffffff; border: 1px solid #cbd5e1; padding: 6px 14px; 
+      font-size: 13px; font-weight: 500; color: #475569; border-radius: 0; 
+      cursor: pointer; transition: all 0.2s ease; box-shadow: none;
+    }
+    .dt-btn:hover { background: #f8fafc; border-color: #94a3b8; color: #0f172a; }
+    
+    .table-responsive { 
+      background: #ffffff; padding: 0; border: 1px solid #d1d5db; 
+      border-radius: 0; box-shadow: none; 
+      overflow-x: auto; -webkit-overflow-scrolling: touch; 
+    }
+    
+    .table-header-wrapper {
+      padding: 12px 16px; border-bottom: 1px solid #d1d5db;
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;
+      background: #ffffff;
+    }
+    
+    /* Table styling (Spreadsheet Mode) */
+    .table { width: 100%; margin-bottom: 0; border-collapse: collapse; font-family: 'Inter', sans-serif; }
+    .table-bordered th, .table-bordered td { 
+      vertical-align: middle; font-size: 13px; white-space: nowrap !important; 
+      border: 1px solid #e5e7eb; padding: 6px 10px;
+    }
+    .table-bordered th { 
+      background-color: #f9fafb; font-weight: 600; color: #374151; 
+      text-align: left; position: sticky; top: 0; box-shadow: 0 1px 0 #e5e7eb;
+    }
+    .table-hover tbody tr { transition: none; }
+    .table-hover tbody tr:hover td { background-color: #f3f6f4; }
+    
+    /* Custom Inputs */
+    .room-input { 
+      border: 1px solid #cbd5e1; padding: 6px 10px; border-radius: 0; 
+      width: 140px; font-size: 13px; color: #0f172a; transition: all 0.2s;
+      background: #ffffff;
+    }
+    .room-input:focus {
+      outline: none; border-color: #3b82f6;
+    }
+    
+    .action-icons { display: flex; gap: 12px; align-items: center; justify-content: center; }
+    .icon-btn {
+      width: 28px; height: 28px; border-radius: 0; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: 0.2s; background: #f1f5f9; color: #64748b; font-size: 13px;
+    }
+    .icon-btn:hover { background: #e2e8f0; color: #0f172a; }
+    .icon-btn.primary { background: #eff6ff; color: #3b82f6; }
+    .icon-btn.primary:hover { background: #dbeafe; color: #1d4ed8; }
+    
+    /* Search Bar */
+    .search-wrapper { position: relative; width: 250px; }
+    .search-wrapper i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px; }
+    .search-wrapper input { 
+      width: 100%; border: 1px solid #cbd5e1; padding: 6px 12px 6px 35px; 
+      border-radius: 0; outline: none; font-size: 13px; transition: 0.2s;
+    }
+    .search-wrapper input:focus { border-color: #3b82f6; }
+    
+    /* Google Sheet Style Screen */
+    #players-screen { display: none; background: #f7f8fa; min-height: 100vh; }
+    .sheet-toolbar { 
+      background: #ffffff; border-bottom: 1px solid #e5e7eb; padding: 8px 16px; 
+      display: flex; align-items: center; gap: 16px;
+    }
+    .sheet-title-area { display: flex; flex-direction: column; }
+    .sheet-name { font-size: 16px; font-weight: 500; color: #111827; }
+    .sheet-menus { display: flex; gap: 12px; font-size: 13px; color: #4b5563; margin-top: 4px; }
+    .sheet-menus span { cursor: pointer; padding: 2px 4px; border-radius: 0; }
+    .sheet-menus span:hover { background: #f3f4f6; color: #111827; }
+    
+    .sheet-back-btn { 
+      background: #f3f4f6; border: 1px solid #e5e7eb; padding: 6px 12px; border-radius: 0; 
+      cursor: pointer; font-size: 13px; color: #374151; font-weight: 500;
+    }
+    .sheet-back-btn:hover { background: #e5e7eb; }
+
+    .google-sheet-container { 
+      background: #ffffff; margin: 16px; border: 1px solid #d1d5db; 
+      box-shadow: none; overflow: auto; height: calc(100vh - 100px);
+      border-radius: 0;
+    }
+    .google-sheet-table { width: 100%; border-collapse: collapse; font-family: 'Inter', sans-serif; }
+    .google-sheet-table th, .google-sheet-table td { 
+      border: 1px solid #e5e7eb; padding: 6px 10px; font-size: 13px; white-space: nowrap; 
+    }
+    .google-sheet-table th { 
+      background: #f9fafb; color: #374151; font-weight: 600; text-align: left; 
+      position: sticky; top: 0; z-index: 1; box-shadow: 0 1px 0 #e5e7eb;
+    }
+    .google-sheet-table th.row-number { width: 40px; text-align: center; background: #f3f4f6; color: #6b7280; }
+    .google-sheet-table td.row-number { background: #f9fafb; text-align: center; color: #6b7280; font-weight: 500; }
+    .google-sheet-table tbody tr:hover td { background-color: #f3f6f4; }
+    /* Sidebar & Layout */
+    .layout-wrapper { display: flex; width: 100%; height: calc(100vh - 57px); overflow: hidden; }
+    
+    .sidebar {
+      width: 250px; background: #ffffff; border-right: 1px solid #e5e7eb;
+      display: flex; flex-direction: column; padding: 20px 0;
+      transition: transform 0.3s ease; z-index: 1000;
+    }
+    .sidebar-link {
+      padding: 12px 24px; display: flex; align-items: center; gap: 12px;
+      color: #4b5563; font-weight: 500; font-size: 14px; cursor: pointer;
+      border-left: 3px solid transparent; transition: 0.2s;
+    }
+    .sidebar-link:hover, .sidebar-link.active {
+      background: #f3f4f6; color: #111827; border-left-color: #10b981;
+    }
+    
+    .main-content { flex: 1; overflow-y: auto; padding-bottom: 40px; background: #f8fafc; }
+    
+    .sidebar { position: fixed; height: 100%; top: 57px; left: 0; transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); box-shadow: 4px 0 15px rgba(0,0,0,0.05); }
+
+    /* Match Tabs */
+    .match-tabs {
+      display: flex; gap: 20px; border-bottom: 1px solid #e5e7eb; margin-bottom: 20px;
+    }
+    .match-tab {
+      padding: 10px 4px; font-weight: 600; font-size: 14px; color: #6b7280;
+      cursor: pointer; border-bottom: 2px solid transparent; transition: 0.2s;
+    }
+    .match-tab.active { color: #111827; border-bottom-color: #10b981; }
+    .match-tab:hover:not(.active) { color: #374151; border-bottom-color: #d1d5db; }
+    
+    /* Earnings Cards */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card {
+      background: #ffffff; border: 1px solid #e5e7eb; border-radius: 0; padding: 20px;
+      display: flex; flex-direction: column; gap: 8px; box-shadow: none;
+    }
+    .stat-label { color: #6b7280; font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-value { color: #111827; font-size: 28px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    
+    /* Screens */
+    .screen-view { display: none; }
+    .screen-view.active { display: block; }
+    
+    /* Dark Mode Theme */
+    body.dark-mode { background-color: #121212 !important; color: #e0e0e0 !important; }
+    body.dark-mode .main-content { background: #121212 !important; }
+    body.dark-mode .dashboard-header { background-color: #1e1e1e !important; border-bottom: 1px solid #333 !important; }
+    body.dark-mode .sidebar { background-color: #1e1e1e !important; border-right: 1px solid #333 !important; }
+    body.dark-mode .sidebar-link { color: #aaa !important; }
+    body.dark-mode .sidebar-link.active { background-color: #333 !important; color: #4facfe !important; }
+    body.dark-mode .sidebar-link:hover { background-color: #2a2a2a !important; }
+    body.dark-mode .login-box { background-color: #1e1e1e !important; border: 1px solid #333 !important; color: #fff !important; }
+    body.dark-mode input, body.dark-mode select { background-color: #2a2a2a !important; color: #fff !important; border: 1px solid #444 !important; }
+    body.dark-mode table.table-bordered th, body.dark-mode table.table-bordered td { border: 1px solid #444 !important; }
+    body.dark-mode .table-bordered thead th { background-color: #2a2a2a !important; color: #ddd !important; }
+    body.dark-mode tbody tr { background-color: #1e1e1e !important; }
+    body.dark-mode tbody tr:nth-child(odd) { background-color: #121212 !important; }
+    body.dark-mode tbody tr:hover { background-color: #333 !important; }
+    body.dark-mode #next-match-banner { background-color: #1e1e1e !important; color: #ddd !important; border: 1px solid #444 !important; }
+    body.dark-mode #next-match-id-text { background-color: #2a2a2a !important; color: #fff !important; border: 1px solid #444 !important; }
+    body.dark-mode .stat-card { background-color: #1e1e1e !important; border: 1px solid #333 !important; }
+    body.dark-mode div[style*="background:#f1f3f4"], body.dark-mode div[style*="background:#f8f9fa"] { background-color: #2a2a2a !important; color: #ddd !important; }
+    body.dark-mode span[style*="color:#0f172a"], body.dark-mode div[style*="color:#111827"], body.dark-mode h1, body.dark-mode h3 { color: #fff !important; }
+    body.dark-mode span[style*="color:#475569"] { color: #aaa !important; }
+    body.dark-mode td[style*="color:#111827"], body.dark-mode td[style*="color:#0f172a"], body.dark-mode .match-tab { color: #aaa !important; }
+    body.dark-mode .match-tab.active { color: #fff !important; border-bottom-color: #10b981; }
+    body.dark-mode .checkbox-custom { border: 1px solid #555 !important; }
+    body.dark-mode #custom-alert-overlay > div { background-color:#1e1e1e !important; border-color:#444 !important; }
+    body.dark-mode #custom-alert-msg { color:#e0e0e0 !important; }
+    
+  </style>
+</head>
+<body>
+
+  <!-- Login Screen -->
+  <div id="login-screen" class="active">
+    <div class="login-box">
+      <div style="display:flex; justify-content:center; margin-bottom:20px;">
+        <i class="fas fa-bolt" style="font-size:28px; color:#111827;"></i>
+      </div>
+      <h3 class="text-center" style="margin-bottom:4px;">Sign in to Staff</h3>
+      <p class="login-sub text-center">Manage matches and room details securely</p>
+      <form id="login-form">
+        <div class="mb-3 text-start">
+          <label class="form-label">Username</label>
+          <input type="text" class="form-control" id="login-user" required placeholder="e.g. staff1">
+        </div>
+        <div class="mb-3 text-start">
+          <label class="form-label">Password</label>
+          <input type="password" class="form-control" id="login-pass" required placeholder="••••••••">
+        </div>
+        <button type="submit" id="login-btn" class="btn btn-primary w-100">Continue</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashboard-screen">
+    <!-- Navbar -->
+    <div class="navbar-custom">
+      <div class="navbar-brand-custom">
+        <i class="fas fa-bars" id="menu-toggle" style="cursor:pointer; color:#4b5563; margin-right:8px; font-size:18px;"></i>
+        <div style="width:32px; height:32px; background:#111827; border-radius:0; display:flex; align-items:center; justify-content:center; color:white;">
+          <i class="fas fa-bolt" style="font-size:16px;"></i>
+        </div>
+        <span>BattlxClash</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:15px;">
+        <span id="staff-name-display" style="font-size:14px; font-weight:500; color:#475569;"></span>
+        <div class="icon-btn" onclick="logoutStaff()" title="Logout">
+          <i class="fas fa-power-off"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Layout Wrapper -->
+    <div class="layout-wrapper">
+      
+      <div class="sidebar" id="sidebar">
+        <div style="flex-grow:1;">
+          <div class="sidebar-link active" onclick="switchView('matches')">
+            <i class="fas fa-gamepad" style="width:20px;"></i> Matches
+          </div>
+          <div class="sidebar-link" onclick="switchView('earnings')">
+            <i class="fas fa-wallet" style="width:20px;"></i> Earnings
+          </div>
+          <div class="sidebar-link" onclick="switchView('penalty')">
+            <i class="fas fa-exclamation-triangle" style="width:20px;"></i> Your Penalty
+          </div>
+        </div>
+        <div style="border-top:1px solid #e5e7eb; padding-top:10px; margin-top:10px;" id="sidebar-bottom-border">
+          <div class="sidebar-link" onclick="toggleDarkMode()">
+            <i class="fas fa-moon" style="width:20px;" id="dark-mode-icon"></i> <span id="dark-mode-text">Dark Mode</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content Area -->
+      <div class="main-content">
+        
+        <!-- Matches View -->
+        <div id="view-matches" class="screen-view active container-fluid mt-4" style="max-width: 1400px; padding: 0 24px;">
+          <h1 class="page-title">Match Management</h1>
+          
+          <!-- Important Notice -->
+          <div style="background:#fff3cd; color:#856404; padding:10px 16px; border-left:4px solid #ffc107; font-weight:600; font-size:13px; margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>Important: Match ka Room ID aur Password match start hone se kam se kam 5 minute pehle dena zaroori hai. Late hone par Penalty lagegi!</span>
+          </div>
+          
+          <!-- Next Match Banner (Spreadsheet Style) -->
+          <div id="next-match-banner" style="display:none; background:#ffffff; color:#333; padding:10px 15px; border:1px solid #ccc; margin-bottom:15px; align-items:center; justify-content:space-between; font-family:Arial, sans-serif; border-radius:0;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <i class="fas fa-clock" style="color:#d93025; font-size:14px;"></i>
+              <span style="font-size:13px; font-weight:bold; color:#5f6368; text-transform:uppercase;">Next Match In:</span>
+              <span id="next-match-timer-text" style="font-size:14px; font-weight:bold; color:#1a73e8; font-family:monospace;">Loading...</span>
+            </div>
+            
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:12px; color:#5f6368; font-weight:bold;">Match ID:</span>
+              <input type="text" id="next-match-id-text" readonly style="border:1px solid #ccc; background:#f1f3f4; padding:4px 8px; font-size:13px; font-family:monospace; color:#202124; width:80px; text-align:center; border-radius:0; outline:none;" value="...">
+              <button onclick="copyNextMatchId()" style="background:#f8f9fa; border:1px solid #ccc; padding:4px 10px; border-radius:0; color:#444; cursor:pointer; font-size:12px; font-weight:bold; height:27px; transition:0.2s;" onmouseover="this.style.background='#e8eaed'" onmouseout="this.style.background='#f8f9fa'" title="Copy Match ID">
+                Copy
+              </button>
+              <button onclick="viewNextMatchPlayers()" style="background:#e8f0fe; border:1px solid #1a73e8; padding:4px 10px; border-radius:0; color:#1a73e8; cursor:pointer; font-size:12px; font-weight:bold; height:27px; transition:0.2s;" onmouseover="this.style.background='#d2e3fc'" onmouseout="this.style.background='#e8f0fe'" title="View Joined Players">
+                View Players
+              </button>
+            </div>
+          </div>
+          
+          <div class="match-tabs">
+            <div class="match-tab active" onclick="switchTab('Upcoming')">Upcoming</div>
+            <div class="match-tab" onclick="switchTab('Ongoing')">Ongoing</div>
+            <div class="match-tab" onclick="switchTab('Completed')">Completed</div>
+          </div>
+          
+          <div class="table-responsive">
+        
+        <div class="table-header-wrapper">
+          <div class="table-controls">
+            <button class="dt-btn" onclick="exportData('print')"><i class="fas fa-print"></i> Print</button>
+            <button class="dt-btn" onclick="exportData('csv')"><i class="fas fa-file-csv"></i> CSV</button>
+            <button class="dt-btn" onclick="exportData('excel')"><i class="fas fa-file-excel"></i> Excel</button>
+            <button class="dt-btn" onclick="exportData('pdf')"><i class="fas fa-file-pdf"></i> PDF</button>
+            <button class="dt-btn" onclick="exportData('copy')"><i class="fas fa-copy"></i> Copy</button>
+          </div>
+          
+          <div class="search-wrapper">
+            <i class="fas fa-search"></i>
+            <input type="search" id="search-input" placeholder="Search matches...">
+          </div>
+        </div>
+
+        <table class="table table-bordered table-hover">
+          <thead>
+            <tr>
+              <th class="text-center" style="width:40px;"><input type="checkbox" class="checkbox-custom"></th>
+              <th>Time</th>
+              <th>Match ID</th>
+              <th>Match Details</th>
+              <th>Status</th>
+              <th>Room ID</th>
+              <th>Password</th>
+              <th class="text-center">Action</th>
+              <th class="text-center">Data</th>
+            </tr>
+          </thead>
+          <tbody id="matches-list">
+            <!-- Render Matches here -->
+          </tbody>
+        </table>
+        
+      </div>
+    </div>
+    
+    <!-- Earnings View -->
+    <div id="view-earnings" class="screen-view container-fluid mt-4" style="max-width: 1000px; padding: 0 24px;">
+      <h1 class="page-title">My Earnings</h1>
+      
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Rooms Updated</div>
+          <div class="stat-value" id="e-rooms">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Revenue (Coins)</div>
+          <div class="stat-value" style="color:#10b981;"><i class="fas fa-coins" style="font-size:20px;"></i> <span id="e-total">0</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Available Balance</div>
+          <div class="stat-value" style="color:#3b82f6;"><i class="fas fa-coins" style="font-size:20px;"></i> <span id="e-balance">0</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Penalty Deducted</div>
+          <div class="stat-value" style="color:#ef4444;"><i class="fas fa-gavel" style="font-size:20px;"></i> -<span id="e-penalty">0</span></div>
+        </div>
+      </div>
+      <div class="login-box" style="margin:0 0 24px 0; max-width:100%; padding:24px;">
+        <h3 style="font-size:18px; margin-bottom:16px;"><i class="fas fa-trophy" style="color:#f59e0b;"></i> Top Staff Leaderboard</h3>
+        <p style="font-size:13px; color:#6b7280; margin-bottom:16px;">Top performing staff members based on hosted rooms.</p>
+        <div class="table-responsive">
+          <table class="table table-bordered table-hover">
+            <thead>
+              <tr>
+                <th style="width:60px; text-align:center;">Rank</th>
+                <th>Staff Username</th>
+                <th style="text-align:center;">Rooms Hosted</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard-list">
+              <!-- Render Leaderboard here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <div class="login-box" style="margin:0; max-width:100%; padding:24px;">
+        <h3 style="font-size:18px; margin-bottom:16px;">Request Withdrawal</h3>
+        <p style="font-size:13px; color:#6b7280; margin-bottom:16px;">Enter your UPI ID or Payment Details to request withdrawal. Minimum 50 Coins required.</p>
+        <input type="text" id="withdraw-method" class="form-control mb-3" placeholder="UPI ID / PhonePe / GPay Number">
+        <input type="number" id="withdraw-amount" class="form-control mb-3" placeholder="Amount (Coins)">
+        <button class="btn btn-primary" onclick="requestWithdrawal()">Submit Request</button>
+      </div>
+    </div> <!-- End view-earnings -->
+    
+    <!-- Penalty View -->
+    <div id="view-penalty" class="screen-view container-fluid mt-4" style="max-width: 1400px; padding: 0 24px;">
+      <h1 class="page-title">Your Penalty Logs</h1>
+      <p style="font-size:13px; color:#6b7280; margin-bottom:16px;">Yahan wo sabhi matches ki list dikhegi jisme late Room ID/Pass dene ki wajah se penalty lagi hai.</p>
+      
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+          <thead>
+            <tr>
+              <th>Match ID</th>
+              <th>Match Name</th>
+              <th>Status</th>
+              <th>Penalty Reason</th>
+              <th class="text-center">Coins Deducted</th>
+              <th class="text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody id="penalty-list">
+            <!-- Render Penalties here -->
+          </tbody>
+        </table>
+      </div>
+    </div> <!-- End view-penalty -->
+    
+  </div> <!-- End main-content -->
+  </div> <!-- End Layout Wrapper -->
+  </div> <!-- End Dashboard Screen -->
+
+  <!-- Google Sheet Style Players Screen -->
+  <div id="players-screen">
+    <div class="sheet-toolbar">
+      <button class="sheet-back-btn" onclick="closeSheet()"><i class="fas fa-arrow-left"></i> Back</button>
+      <div style="width:32px; height:32px; background:#10b981; border-radius:0; display:flex; align-items:center; justify-content:center; color:white;">
+        <i class="fas fa-table"></i>
+      </div>
+      <div class="sheet-title-area">
+        <div class="sheet-name" id="sheet-match-name">Match Players Data</div>
+        <div class="sheet-menus">
+          <span onclick="exportData('print')"><i class="fas fa-print"></i> Print</span>
+          <span onclick="exportData('csv')"><i class="fas fa-file-csv"></i> CSV</span>
+          <span onclick="exportData('excel')"><i class="fas fa-file-excel"></i> Excel</span>
+          <span onclick="exportData('copy')"><i class="fas fa-copy"></i> Copy</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="google-sheet-container">
+      <table class="google-sheet-table">
+        <thead>
+          <tr>
+            <th class="row-number"></th>
+            <th style="width:100px;">A</th>
+            <th style="width:250px;">B</th>
+            <th style="width:150px;">C</th>
+            <th>D</th>
+          </tr>
+          <tr>
+            <th class="row-number"></th>
+            <th>Slot No.</th>
+            <th>Player IGN</th>
+            <th>Player UID</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="sheet-rows">
+          <!-- Data goes here -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Custom Flat Alert Dialog -->
+  <div id="custom-alert-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:99999; align-items:center; justify-content:center; font-family:Arial, sans-serif;">
+    <div style="background:#fff; width:350px; border:1px solid #999; box-shadow:0px 4px 6px rgba(0,0,0,0.2); border-radius:0;">
+      <div style="background:#f1f3f4; padding:8px 12px; border-bottom:1px solid #ccc; font-weight:bold; font-size:14px; color:#202124; display:flex; justify-content:space-between; align-items:center;">
+        <span><i class="fas fa-info-circle" style="color:#1a73e8; margin-right:5px;"></i> Notification</span>
+        <i class="fas fa-times" style="cursor:pointer; color:#5f6368;" onclick="closeCustomAlert()"></i>
+      </div>
+      <div style="padding:16px; font-size:13px; color:#333; line-height:1.5; white-space:pre-wrap;" id="custom-alert-msg">
+      </div>
+      <div style="background:#f8f9fa; padding:10px 16px; border-top:1px solid #ccc; text-align:right;">
+        <button onclick="closeCustomAlert()" style="background:#1a73e8; color:#fff; border:1px solid #1a73e8; padding:6px 16px; font-size:12px; font-weight:bold; cursor:pointer; border-radius:0; transition:0.2s;" onmouseover="this.style.background='#1557b0'" onmouseout="this.style.background='#1a73e8'">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="config.js?v=5.7"></script>
+  <script type="module" src="firebase.js?v=5.7"></script>
+  <script type="module" src="app.js?v=5.7"></script>
+  <!-- Result Modal -->
+  <style>
+    .res-modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:100000; align-items:center; justify-content:center; }
+    .res-modal-content { background:#fff; width:90%; max-width:700px; border:1px solid #ccc; box-shadow:0 4px 10px rgba(0,0,0,0.2); max-height:90vh; display:flex; flex-direction:column; }
+    .res-modal-header { padding:12px 16px; background:#f1f3f4; border-bottom:1px solid #ccc; display:flex; justify-content:space-between; align-items:center; font-weight:bold; }
+    .res-modal-body { padding:16px; overflow-y:auto; flex:1; }
+    .res-modal-footer { padding:12px 16px; background:#f8f9fa; border-top:1px solid #ccc; display:flex; justify-content:flex-end; gap:10px; }
+    body.dark-mode .res-modal-content { background:#1e1e1e; border-color:#444; }
+    body.dark-mode .res-modal-header { background:#2a2a2a; border-color:#444; color:#fff; }
+    body.dark-mode .res-modal-footer { background:#2a2a2a; border-color:#444; }
+    body.dark-mode .res-kills, body.dark-mode .res-rank, body.dark-mode .res-prize { background:#2a2a2a !important; color:#fff !important; border-color:#444 !important; }
+    body.dark-mode #result-match-info { background:#2a2a2a !important; color:#fff !important; border-color:#444 !important; }
+  </style>
+
+  <div class="res-modal" id="result-modal" style="display:none;">
+    <div class="res-modal-content">
+      <div class="res-modal-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <i class="fas fa-flag-checkered" style="color:#10b981;"></i> Declare Match Result
+        </div>
+        <div style="cursor:pointer; color:#5f6368;" onclick="document.getElementById('result-modal').style.display='none'">
+          <i class="fas fa-times"></i>
+        </div>
+      </div>
+      <div class="res-modal-body">
+        <div id="result-match-info" style="font-size:13.5px;font-weight:600;color:#111;margin-bottom:16px;padding:12px;background:#f8f9fa;border:1px solid #ccc;"></div>
+
+        <!-- TEAM MATCH VIEW -->
+        <div id="team-result-section" style="display:none;margin-bottom:18px;">
+          <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:start;">
+            <!-- Team A -->
+            <div style="border:1px solid #3b82f6;overflow:hidden;">
+              <div style="background:#3b82f6;padding:10px;text-align:center;font-weight:700;color:#fff;font-size:14px;">🔵 TEAM A</div>
+              <div id="team-a-players" style="padding:10px;min-height:60px;background:#eff6ff;"></div>
+              <div style="padding:8px;background:#fff;">
+                <button class="btn btn-primary w-100 btn-sm" id="btn-team-a-win" style="justify-content:center;">🏆 Team A Wins</button>
+              </div>
+            </div>
+            <!-- VS -->
+            <div style="display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#6b7280;padding-top:28px;">VS</div>
+            <!-- Team B -->
+            <div style="border:1px solid #ef4444;overflow:hidden;">
+              <div style="background:#ef4444;padding:10px;text-align:center;font-weight:700;color:#fff;font-size:14px;">🔴 TEAM B</div>
+              <div id="team-b-players" style="padding:10px;min-height:60px;background:#fef2f2;"></div>
+              <div style="padding:8px;background:#fff;">
+                <button class="btn btn-danger w-100 btn-sm" id="btn-team-b-win" style="justify-content:center;">🏆 Team B Wins</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Prize Calc (Admin Set Only) -->
+        <div class="stats-grid" style="grid-template-columns:1fr 1fr;margin-bottom:16px;gap:12px;">
+          <div class="form-group" id="calc-kill-group" style="margin-bottom:0;"><label>Prize Per Kill (Coins)</label><input type="number" id="calc-per-kill" value="0" class="form-control" disabled style="background:#f1f3f4; font-weight:bold; color:#111;"></div>
+          <div class="form-group" id="calc-win-group" style="margin-bottom:0;"><label>Rank 1 Win Bonus (Coins)</label><input type="number" id="calc-win-bonus" value="0" class="form-control" disabled style="background:#f1f3f4; font-weight:bold; color:#111;"></div>
+        </div>
+
+        <!-- Individual Table -->
+        <div class="table-responsive" style="max-height:320px;overflow-y:auto;border:1px solid #e5e7eb;">
+          <table class="table table-bordered" style="margin:0;">
+            <thead style="position:sticky;top:0;background:#f8fafc;z-index:2;">
+              <tr>
+                <th style="width:60px;">Rank</th>
+                <th>Player (IGN / UID)</th>
+                <th id="th-kills" style="width:80px;">Kills</th>
+                <th style="width:100px;">Prize</th>
+              </tr>
+            </thead>
+            <tbody id="player-result-list"></tbody>
+          </table>
+        </div>
+        <p style="font-size:12px;color:#6b7280;margin-top:14px;">
+          <i class="fas fa-info-circle" style="color:#3b82f6;"></i>
+          For team matches, click "Team A/B Wins" to auto-fill prizes, then Declare.
+        </p>
+      </div>
+      <div class="res-modal-footer">
+        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('result-modal').style.display='none'">Cancel</button>
+        <button class="btn btn-success btn-sm" id="btn-submit-result">
+          <i class="fas fa-gavel"></i> Declare Result
+        </button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
