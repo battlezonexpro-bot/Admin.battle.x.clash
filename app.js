@@ -59,8 +59,8 @@ function doLogin(user, pass) {
 
 document.getElementById('login-form').onsubmit = (e) => {
   e.preventDefault();
-  const user = document.getElementById('login-user').value.toLowerCase().trim();
-  const pass = document.getElementById('login-pass').value;
+  const user = document.getElementById('login-user').value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+  const pass = document.getElementById('login-pass').value.trim();
   doLogin(user, pass);
 };
 
@@ -267,6 +267,16 @@ window.updateRoom = async (mid) => {
   const mOld = globalMatches.find(m => m.id === mid);
   if (!mOld) return;
 
+  if (mOld.joinedSpots < mOld.totalSpots) {
+    const vsFormats = ['1v1_lone_wolf', '1v1_ump', '2v2_lone_wolf', 'clash_squad'];
+    const isVsMatch = vsFormats.includes(mOld.matchFormat) || mOld.totalSpots <= 12 || (mOld.title && mOld.title.toLowerCase().includes('vs'));
+    
+    if (isVsMatch) {
+      alert(`Players have not fully joined yet! (${mOld.joinedSpots}/${mOld.totalSpots} Slots Full). You cannot update Room ID/Password for a VS Match until all slots are filled.`);
+      return;
+    }
+  }
+
   if (mOld.status === 'Resulted' || mOld.status === 'Completed' || mOld.status === 'Cancelled') {
     alert("Match is already completed. You cannot update Room ID/Password anymore.");
     return;
@@ -430,6 +440,153 @@ window.closeSheet = () => {
   document.getElementById('players-screen').style.display = 'none';
   document.getElementById('dashboard-screen').style.display = 'block';
 };
+
+fb.listenMatches(matches => {
+  globalMatches = matches;
+  if(document.getElementById('matches-screen').style.display === 'block') {
+    renderMatchList(matches);
+  }
+});
+
+// ── EDIT SLOTS LOGIC ──
+let activeEditSlotsMatch = null;
+let dragSourceSlot = null;
+
+window.openEditSlotsModal = (match) => {
+  activeEditSlotsMatch = match;
+  const maxSlotsEl = document.getElementById('es-max-slots');
+  if(maxSlotsEl) maxSlotsEl.innerText = match.totalSpots || 1;
+  
+  const list = document.getElementById('edit-slots-list');
+  if(!list) return;
+  list.innerHTML = '';
+  
+  const players = match.joinedPlayers || [];
+  const igns = match.joinedIGNs || [];
+  const total = match.totalSpots || 1;
+  const fmtCheck = (match.matchFormat || match.format || '').toLowerCase();
+  const isVs = fmtCheck.includes('team_win') || fmtCheck.includes('clash_squad') || fmtCheck.includes('lone_wolf') || fmtCheck.includes('ump');
+  const halfSlots = Math.floor(total / 2);
+  
+  for(let i=0; i<total; i++) {
+    if (isVs && total >= 2) {
+      if (i === 0) {
+        const headerA = document.createElement('li');
+        headerA.style.cssText = 'background:#3b82f6;color:#fff;padding:8px 12px;border-radius:6px;font-weight:700;font-size:13px;text-align:center;cursor:default;';
+        headerA.className = 'es-team-header';
+        headerA.innerHTML = '🔵 TEAM A';
+        list.appendChild(headerA);
+      }
+      if (i === halfSlots) {
+        const headerB = document.createElement('li');
+        headerB.style.cssText = 'background:#ef4444;color:#fff;padding:8px 12px;border-radius:6px;font-weight:700;font-size:13px;text-align:center;cursor:default;margin-top:12px;';
+        headerB.className = 'es-team-header';
+        headerB.innerHTML = '🔴 TEAM B';
+        list.appendChild(headerB);
+      }
+    }
+    
+    const uid = players[i] || '';
+    const ign = igns[i] || '';
+    
+    const li = document.createElement('li');
+    li.className = 'es-slot-row';
+    li.dataset.slotIndex = i;
+    li.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid #ccc;border-radius:6px;background:#fff;min-height:42px;';
+    
+    // Fixed slot badge
+    const badge = document.createElement('div');
+    badge.style.cssText = 'min-width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;color:#fff;flex-shrink:0;';
+    if (isVs && total >= 2) {
+      if (i < halfSlots) { badge.style.background = '#3b82f6'; badge.innerText = 'A' + (i + 1); }
+      else { badge.style.background = '#ef4444'; badge.innerText = 'B' + (i - halfSlots + 1); }
+    } else { badge.style.background = '#10b981'; badge.innerText = (i + 1); }
+    li.appendChild(badge);
+    
+    // Draggable player card
+    const playerCard = document.createElement('div');
+    playerCard.className = 'es-player-card';
+    playerCard.dataset.uid = uid;
+    playerCard.dataset.ign = ign;
+    playerCard.draggable = true;
+    playerCard.style.cssText = 'flex:1;display:flex;justify-content:space-between;align-items:center;padding:4px 8px;border-radius:4px;cursor:grab;transition:background 0.15s;';
+    
+    if (uid && uid.trim() !== '') {
+      playerCard.style.background = 'rgba(59,130,246,0.06)';
+      playerCard.innerHTML = `<div><div style="font-weight:700;color:#111;font-size:13px;">${ign}</div><div style="font-size:9px;color:#6b7280;">${uid}</div></div><div style="color:#9ca3af;"><i class="fas fa-grip-vertical"></i></div>`;
+    } else {
+      playerCard.style.background = 'transparent'; playerCard.draggable = false;
+      playerCard.innerHTML = `<div style="color:#9ca3af;font-style:italic;font-size:12px;">(Empty)</div>`;
+    }
+    
+    playerCard.addEventListener('dragstart', (e) => { dragSourceSlot = li; playerCard.style.opacity = '0.4'; e.dataTransfer.effectAllowed = 'move'; });
+    playerCard.addEventListener('dragend', () => { playerCard.style.opacity = '1'; dragSourceSlot = null; list.querySelectorAll('.es-slot-row').forEach(r => r.style.outline = ''); });
+    
+    li.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; if (dragSourceSlot && dragSourceSlot !== li) li.style.outline = '2px dashed #059669'; });
+    li.addEventListener('dragleave', () => { li.style.outline = ''; });
+    li.addEventListener('drop', (e) => {
+      e.preventDefault(); li.style.outline = '';
+      if (!dragSourceSlot || dragSourceSlot === li) return;
+      const srcCard = dragSourceSlot.querySelector('.es-player-card');
+      const tgtCard = li.querySelector('.es-player-card');
+      if (!srcCard || !tgtCard) return;
+      const srcUid = srcCard.dataset.uid, srcIgn = srcCard.dataset.ign;
+      const tgtUid = tgtCard.dataset.uid, tgtIgn = tgtCard.dataset.ign;
+      updatePlayerCardStaff(tgtCard, srcUid, srcIgn);
+      updatePlayerCardStaff(srcCard, tgtUid, tgtIgn);
+      dragSourceSlot = null;
+    });
+    
+    li.appendChild(playerCard);
+    list.appendChild(li);
+  }
+
+  document.getElementById('edit-slots-modal').style.display = 'flex';
+};
+
+function updatePlayerCardStaff(card, uid, ign) {
+  card.dataset.uid = uid; card.dataset.ign = ign;
+  if (uid && uid.trim() !== '') {
+    card.draggable = true; card.style.background = 'rgba(59,130,246,0.06)'; card.style.cursor = 'grab';
+    card.innerHTML = `<div><div style="font-weight:700;color:#111;font-size:13px;">${ign}</div><div style="font-size:9px;color:#6b7280;">${uid}</div></div><div style="color:#9ca3af;"><i class="fas fa-grip-vertical"></i></div>`;
+  } else {
+    card.draggable = false; card.style.background = 'transparent'; card.style.cursor = 'default';
+    card.innerHTML = `<div style="color:#9ca3af;font-style:italic;font-size:12px;">(Empty)</div>`;
+  }
+}
+
+const btnSaveSlots = document.getElementById('btn-save-slots');
+if (btnSaveSlots) {
+  btnSaveSlots.onclick = async () => {
+    if (!activeEditSlotsMatch) return;
+    const totalSpots = activeEditSlotsMatch.totalSpots || 1;
+    let newJoinedPlayers = [];
+    let newJoinedIGNs = [];
+    
+    document.querySelectorAll('#edit-slots-list .es-slot-row').forEach(li => {
+      const card = li.querySelector('.es-player-card');
+      newJoinedPlayers.push(card?.dataset.uid || '');
+      newJoinedIGNs.push(card?.dataset.ign || '');
+    });
+    
+    btnSaveSlots.disabled = true;
+    btnSaveSlots.innerText = 'Saving...';
+    try {
+      await fb.updateMatch(activeEditSlotsMatch.id, {
+        joinedPlayers: newJoinedPlayers,
+        joinedIGNs: newJoinedIGNs
+      });
+      document.getElementById('edit-slots-modal').style.display = 'none';
+      document.getElementById('result-modal').style.display = 'none';
+      alert('Slots successfully updated! Please re-open the match result to see new positions.');
+    } catch(err) {
+      alert('Error: ' + err.message);
+    } finally {
+      btnSaveSlots.disabled = false;
+      btnSaveSlots.innerHTML = '<i class="fas fa-save"></i> Save Slots';
+    }
+  };
+}
 
 window.exportData = (type) => {
   let isPlayersSheet = document.getElementById('players-screen').style.display === 'block';
@@ -911,6 +1068,11 @@ window.openResultModal = (mid) => {
   });
 
   list.querySelectorAll('.res-rank, .res-kills').forEach(input => input.addEventListener('input', recalculatePrizes));
+
+  const btnEditSlots = document.getElementById('btn-edit-slots');
+  if (btnEditSlots) {
+    btnEditSlots.onclick = () => openEditSlotsModal(match);
+  }
 
   document.getElementById('result-modal').style.display = 'flex';
 };
